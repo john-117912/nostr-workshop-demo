@@ -1,10 +1,10 @@
 # nostr-workshop-demo
 Basic demonstration of a Nostr web-socket client embedded in the browser, with links and resources.
 
-Special thanks to [SuperTestNet](https://github.com/supertestnet) for all his contributions, teaching me the basics and hosting the most excellent workshop on Nostr!
+Special thanks to [CMDruid](https://github.com/cmdruid) for all his contributions, teaching me about TextEncoder and assisting with the first ever nostr workshop in Austin!
 
 ## How to use.
-Open the HTML file using your favorite browser. Please check the developer console for more information.
+Open the HTML file using your favorite browser, then check the developer console to see some magic.
 
 Live demo available here:  
 https://supertestnet.github.io/nostr-workshop-demo  
