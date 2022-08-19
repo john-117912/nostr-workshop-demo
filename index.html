@@ -1,217 +1,120 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <script src="https://bitcoincore.tech/apps/bitcoinjs-ui/lib/bitcoinjs-lib.js"></script>
-  <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
+    <meta charset="UTF-8">
+    <script src="https://bitcoincore.tech/apps/bitcoinjs-ui/lib/bitcoinjs-lib.js"></script>
+    <script src="https://bundle.run/noble-secp256k1@1.2.14"></script>
+    <script src="https://bundle.run/browserify-cipher@1.0.1"></script>
 </head>
-
 <body>
-  <script>
-    // Define some useful libraries and functions.
-    var { getSharedSecret, schnorr, utils } = nobleSecp256k1
-    var crypto  = window.crypto 
-    var getRand = size => crypto.getRandomValues(new Uint8Array(size))
-    var sha256  = bitcoinjs.crypto.sha256
+    <script>
+        var { getSharedSecret, schnorr, utils } = nobleSecp256k1
+        var crypto  = window.crypto 
+        var getRand = size => crypto.getRandomValues(new Uint8Array(size))
+        var sha256  = bitcoinjs.crypto.sha256
+        var keypair = bitcoinjs.ECPair.makeRandom()
+        var privKey = keypair.privateKey.toString( "hex" )
+        var pubKey  = keypair.publicKey.toString( "hex" )
+        pubKey      = pubKey.substring( 2 )
+        console.log( pubKey );
+		var relay = "wss://relay.nostr.info";
+		var socket = new WebSocket( relay );
+		var relay = "wss://relay.nostr.info";
+		var socket = new WebSocket( relay );
+		socket.addEventListener('message', async function( message ) {
+		    var [ type, subId, event ] = JSON.parse( message.data );
+		    var { kind, content } = event || {}
+		    if (!event) return
+		    console.log('message:', event)
+		    if (kind === 4) {
+		        content = decrypt(privKey, pubKey, content)
+		    }
+		    console.log('content:', content)
+		})
+		var subId   = bitcoinjs.ECPair.makeRandom().privateKey.toString( "hex" )
+		var filter  = { "authors": [ pubKey ] }
 
-    // Generate a key-pair for digital signatures.
-		var keypair = bitcoinjs.ECPair.makeRandom()
-		var privKey = keypair.privateKey.toString( "hex" )
-		var pubKey  = keypair.publicKey.toString( "hex" ).substring( 2 )
+		socket.addEventListener('open', async function( e ) {
+		    console.log( "connected to " + relay )
+		      
+		    var subscription = [ "REQ", subId, filter ]
+		    console.log('Subscription:', subscription)
 
-    // Configure a new websocket connection.
-    var relay   = "wss://nostr-relay.wlvs.space"
-    var socket  = new WebSocket( relay )
+		    socket.send(JSON.stringify( subscription ));
+		    var event = {
+		        "content"    : "this workshop is awesome!",
+		        "created_at" : Math.floor( Date.now() / 1000 ),
+		        "kind"       : 1,
+		        "tags"       : [],
+		        "pubkey"     : pubKey,
+		    }
+		    var signedEvent = await getSignedEvent(event, privKey)
+		    console.log('signedEvent:', signedEvent)
+		    socket.send(JSON.stringify([ "EVENT", signedEvent ]))
+		    var message   = "this message is super secret!"
+		    var encrypted = encrypt( privKey, pubKey, message )
+		    var event2 = {
+		        "content"    : encrypted,
+		        "created_at" : Math.floor( Date.now() / 1000 ),
+		        "kind"       : 4,
+		        "tags"       : [ [ 'p', pubKey ] ],
+		        "pubkey"     : pubKey,
+		    }
+		    var signedEvent2 = await getSignedEvent(event2, privKey)
+		    socket.send(JSON.stringify([ "EVENT", signedEvent2 ]))
+		})
 
-    // Configure our subscription settings.
-    var subId   = crypto.randomUUID()
-    var filter  = { "authors": [ pubKey ] }
-
-    socket.addEventListener('open', async function( e ) {
-      // Log to console once we have an open connection. 
-      console.log( "connected to " + relay )
-      
-      // Craft our subscription request.
-      var subscription = [ "REQ", subId, filter ]
-      console.log('Subscription:', subscription)
-
-      socket.send(JSON.stringify( subscription ));
-
-      // Craft our event message.
-      var event = {
-        "content"    : "this workshop is awesome!",
-        "created_at" : Math.floor( Date.now() / 1000 ),
-        "kind"       : 1,
-        "tags"       : [],
-        "pubkey"     : pubKey,
-      }
-
-      // Sign our message.
-      var signedEvent = await getSignedEvent(event, privKey)
-      console.log('signedEvent:', signedEvent)
-
-      // Serialize and send our message.
-      socket.send(JSON.stringify([ "EVENT", signedEvent ]))
-
-      // BONUS: Send an encrypted message!
-		  var keypair2 = bitcoinjs.ECPair.makeRandom()
-		  var privKey2 = keypair2.privateKey.toString( "hex" )
-		  var pubKey2  = keypair2.publicKey.toString( "hex" ).substring( 2 )
-
-      var shareKey1 = await getSharedKey(privKey, pubKey2)
-      var shareKey2 = await getSharedKey(privKey2, pubKey)
-      
-      var message   = "this message is super secret!"
-      var encrypted = await encrypt(message, shareKey1)
-
-      // Don't do this in production.
-      window.shareKey2 = shareKey2
-
-      var event2 = {
-        "content"    : encrypted,
-        "created_at" : Math.floor( Date.now() / 1000 ),
-        "kind"       : 4,
-        "tags"       : [ [ 'p', pubKey2 ] ],
-        "pubkey"     : pubKey,
-      }
-
-      // Sign our message.
-      var signedEvent2 = await getSignedEvent(event2, privKey)
-      console.log('signedEvent2:', signedEvent2)
-
-      // Serialize and send our message.
-      socket.send(JSON.stringify([ "EVENT", signedEvent2 ]))
-    });
-
-    socket.addEventListener( 'message', async function( message ) {
-      // Unpack our message data.
-      var [ type, subId, event ] = JSON.parse( message.data );
-      var { kind, content } = event || {}
-
-      // If event is undefined, return.
-      if (!event) return
-
-      console.log('message:', event)
-      
-      if (kind === 4) {
-        // We have an encrypted message!
-        content = await decrypt(content, window.shareKey2)
-      }
-
-      console.log('content:', content)
-
-      document.querySelector('#console')
-        .innerHTML += `<pre>> ${content}</pre>`
-    })
-
-    async function getSignedEvent(event, privateKey) {
-      /** Produce a signed hash of our event, attach it
-       *  to the event object, then serialize the result.
-       */
-      var eventData = JSON.stringify([
-        0,		                // Reserved for future use.
-        event['pubkey'],	    // The sender's public key
-        event['created_at'],  // Unix timestamp.
-        event['kind'],		    // Message “kind” or type.
-        event['tags'],		    // Tags – identify replies or recipients.
-        event['content']      // Your note contents.
-      ])
-
-      event.id  = sha256( eventData ).toString( 'hex' )
-      event.sig = await schnorr.sign( event.id, privateKey )
-      
-      return event
-    }
-
-    // EXTRA: END-TO-END Encryption!
-
-    async function getSharedKey(privkey, pubkey) {
-      /** Derive a shared key-pair that is NIP-04 compliant and 
-       *  import as a CryptoKey object (for Webcrypto library).
-       */
-      var key = getSharedSecret(privkey, '02' + pubkey, true).substring(2)
-      var options = { name: 'AES-CBC' }
-      var usage   = [ 'encrypt', 'decrypt' ]
-
-      return crypto.subtle.importKey('raw', hexToBytes(key), options, true, usage)
-    }
-    
-    async function encrypt(message, keyFile ) {
-      /** Encrypt a message using a CryptoKey object,
-       *  and format a NIP-04 compliant string output.
-       */
-      var iv = crypto.getRandomValues( new Uint8Array(16) )
-      var ec = new TextEncoder()
-
-      var cipherText = await crypto.subtle.encrypt(
-        { name: 'AES-CBC', iv }, 
-        keyFile, 
-        ec.encode(message)
-      )
-
-      return btoa(bytesToHex(new Uint8Array(cipherText))) 
-        + '?iv=' 
-        + btoa(bytesToHex(iv))
-    }
-    
-    async function decrypt(encodedText, keyFile) {
-      /** Decode an encrypted message using NIP-04 spec,
-       *  and decrypt using a CryptoKey object.
-       */
-      var [ cipherText, iv ] = encodedText.split('?iv=')
-      var dc = new TextDecoder()
-      
-      var plainText = await crypto.subtle.decrypt(
-        { name: 'AES-CBC', iv: hexToBytes(atob(iv)) }, 
-        keyFile,
-        hexToBytes(atob(cipherText))
-      )
-      
-      return dc.decode(plainText)
-    }
-
-    function bytesToHex(byteArray) {
-      for (var arr = [], i = 0; i < byteArray.length; i++) {
-        arr.push(byteArray[i].toString(16).padStart(2, '0'))
-      }
-      return arr.join('')
-    }
-
-    function hexToBytes(str) {
-	    for (var arr = [], i = 0; i < str.length; i += 2) {
-	      arr.push(parseInt(str.substr(i, 2), 16))
+	    async function getSignedEvent(event, privateKey) {
+		    var eventData = JSON.stringify([
+		        0,                    // Reserved for future use
+		        event['pubkey'],        // The sender's public key
+		        event['created_at'],    // Unix timestamp
+		        event['kind'],        // Message “kind” or type
+		        event['tags'],        // Tags identify replies/recipients
+		        event['content']        // Your note contents
+		    ])
+		    event.id  = sha256( eventData ).toString( 'hex' )
+		    event.sig = await schnorr.sign( event.id, privateKey ) 
+		    return event
+		}
+	    function hexToBytes( hex ) {
+	        return Uint8Array.from( hex.match( /.{1,2}/g ).map( ( byte ) => parseInt( byte, 16 ) ) );
 	    }
-      return Uint8Array.from(arr)
-    }
-  </script>
 
-  <h1>Nostr Workshop Demo</h1>
-  <pre>Check your console output for more results!</pre>
-  <pre>Mac: Command+Option+J || Windows/Linux: Control+Shift+J</pre>
-  <div id="console"></div>
-  <a href="https://github.com/cmdruid/nostr-workshop-demo">
-    https://github.com/cmdruid/nostr-workshop-demo
-  </a>
-
-  <style>
-    body {
-      color: whitesmoke;
-      background-color: #252525;
-      text-align: center;
-    }
-    #console {
-      border: 1px solid whitesmoke;
-      height: 300px;
-      max-width: 500px;
-      margin: 1rem auto;
-      padding: 1rem;
-      text-align: left;
-      line-height: 0.5rem;
-    }
-  </style>
+	    function bytesToHex( bytes ) {
+	        return bytes.reduce( ( str, byte ) => str + byte.toString( 16 ).padStart( 2, '0' ), '' );
+	    }
+	    function base64ToHex( str ) {
+	        var raw = atob( str );
+	        var result = '';
+	        var i; for ( i=0; i<raw.length; i++ ) {
+	            var hex = raw.charCodeAt( i ).toString( 16 );
+	            result += ( hex.length === 2 ? hex : '0' + hex );
+	        }
+	        return result;
+	    }
+		function encrypt( privkey, pubkey, text ) {
+		    var key = nobleSecp256k1.getSharedSecret( privkey, '02' + pubkey, true ).substring( 2 );
+		    var iv = window.crypto.getRandomValues(new Uint8Array(16));
+		    var cipher = browserifyCipher.createCipheriv( 'aes-256-cbc', hexToBytes( key ), iv );
+		    var encryptedMessage = cipher.update(text,"utf8","base64");
+		    emsg = encryptedMessage + cipher.final( "base64" );
+		    var uint8View = new Uint8Array( iv.buffer );
+		    var decoder = new TextDecoder();
+		    return emsg + "?iv=" + btoa( String.fromCharCode.apply( null, uint8View ) );
+		}
+		function decrypt( privkey, pubkey, ciphertext ) {
+		    var [ emsg, iv ] = ciphertext.split( "?iv=" );
+		    var key = nobleSecp256k1.getSharedSecret( privkey, '02' + pubkey, true ).substring( 2 );
+		    var decipher = browserifyCipher.createDecipheriv(
+		        'aes-256-cbc',
+		        hexToBytes( key ),
+		        hexToBytes( base64ToHex( iv ) )
+		    );
+		    var decryptedMessage = decipher.update( emsg, "base64" );
+		    dmsg = decryptedMessage + decipher.final( "utf8" );
+		    return dmsg;
+		}
+	</script>
 </body>
 </html>
