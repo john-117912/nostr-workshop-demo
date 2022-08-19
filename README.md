@@ -7,7 +7,7 @@ Special thanks to [SuperTestNet](https://github.com/supertestnet) for all his co
 Open the HTML file using your favorite browser. Please check the developer console for more information.
 
 Live demo available here:  
-https://cmdruid.github.io/nostr-workshop-demo  
+https://supertestnet.github.io/nostr-workshop-demo  
 
 ## Resources
 **Nostr Protocol Implementation Proposals (NIPS)**  
