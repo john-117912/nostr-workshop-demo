@@ -5,7 +5,7 @@ Special thanks to [CMDruid](https://github.com/cmdruid) for all his contribution
 
 ## Slideshow
 
-[https://github.com/supertestnet/nostr-workshop-demo](https://github.com/supertestnet/nostr-workshop-demo)
+[https://tinyurl.com/nostr-workshop](https://tinyurl.com/nostr-workshop)
 
 ## How to use
 Open the HTML file using your favorite browser, then check the developer console to see some magic.
