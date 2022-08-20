@@ -3,7 +3,11 @@ Basic demonstration of a Nostr web-socket client embedded in the browser, with l
 
 Special thanks to [CMDruid](https://github.com/cmdruid) for all his contributions, teaching me about TextEncoder and assisting with the first ever nostr workshop in Austin!
 
-## How to use.
+## Slideshow
+
+[https://github.com/supertestnet/nostr-workshop-demo](https://github.com/supertestnet/nostr-workshop-demo)
+
+## How to use
 Open the HTML file using your favorite browser, then check the developer console to see some magic.
 
 Live demo available here:  
