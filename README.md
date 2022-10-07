@@ -1,7 +1,11 @@
-# nostr-workshop-demo
+# Nostr workshop demo
 Basic demonstration of a Nostr web-socket client embedded in the browser, with links and resources.
 
 Special thanks to [CMDruid](https://github.com/cmdruid) for all his contributions, teaching me about TextEncoder and assisting with the first ever nostr workshop in Austin!
+
+## Video
+
+[![](https://i.imgur.com/7gLUtRt.png)](https://www.youtube.com/watch?v=HbicnlCXg_Y)
 
 ## Slideshow
 
