@@ -19,8 +19,6 @@
         console.log( pubKey );
 		var relay = "wss://nostr.taxi";
 		var socket = new WebSocket( relay );
-		var relay = "wss://relay.nostr.info";
-		var socket = new WebSocket( relay );
 		socket.addEventListener('message', async function( message ) {
 		    var [ type, subId, event ] = JSON.parse( message.data );
 		    var { kind, content } = event || {}
