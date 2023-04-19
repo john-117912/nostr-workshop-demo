@@ -28,7 +28,7 @@
 				content = await decrypt(privKey, event.pubkey, content);
 			}
 			console.log('content:', content);
-		})
+		});
 		var subId   = bitcoinjs.ECPair.makeRandom().privateKey.toString( "hex" ).substring( 0, 16 );
 		var filter  = { "authors": [ pubKey ] }
 
@@ -60,7 +60,7 @@
 			}
 			var signedEvent2 = await getSignedEvent(event2, privKey);
 			socket.send(JSON.stringify([ "EVENT", signedEvent2 ]));		
-		}) //close this bracket, but we’ll put more stuff in here later
+		});
 		async function getSignedEvent(event, privateKey) {
 			var eventData = JSON.stringify([
 				0,					// Reserved for future use
