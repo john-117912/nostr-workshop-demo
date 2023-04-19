@@ -25,7 +25,7 @@
 		    if (!event || event === true) return
 		    console.log('message:', event)
 		    if (kind === 4) {
-		        content = decrypt(privKey, pubKey, content)
+		        content = decrypt(privKey, event.pubkey, content)
 		    }
 		    console.log('content:', content)
 		})
