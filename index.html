@@ -65,11 +65,11 @@
         async function getSignedEvent(event, privateKey) {
             var eventData = JSON.stringify([
                 0,                    // Reserved for future use
-                Event['pubkey'],      // The sender's public key
-                Event['created_at'],  // Unix timestamp
-                Event['kind'],        // Message “kind” or type
-                Event['tags'],        // Tags identify replies/recipients
-                Event['content']      // Your note contents
+                event['pubkey'],      // The sender's public key
+                event['created_at'],  // Unix timestamp
+                event['kind'],        // Message “kind” or type
+                event['tags'],        // Tags identify replies/recipients
+                event['content']      // Your note contents
             ]);
             event.id  = bytesToHex( await sha256( ( new TextEncoder().encode( eventData ) ) ) );
             event.sig = await schnorr.sign( event.id, privateKey );
