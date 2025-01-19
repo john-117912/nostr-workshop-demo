@@ -1,3 +1,9 @@
+forked 19 Jan 2025 @ 12:26<br>
+
+
+below is the original fork readme.md<br>
+VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+
 # Nostr workshop demo
 Basic demonstration of a Nostr web-socket client embedded in the browser, with links and resources.
 
